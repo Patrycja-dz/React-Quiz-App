@@ -1,42 +1,90 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import QUESTIONS from "../questions.js";
 import QuizComplete from "../assets/quiz-complete.png";
-const Quiz = () => {
-  const [userAnswersAndQusetions, setUserAnswersAndQusetions] = useState([]);
-  const activeQusetionIndex = userAnswersAndQusetions.length;
+import QuestionTimer from "./QuestionTimer.jsx";
 
-  const quizIsComplete = activeQusetionIndex === QUESTIONS.length;
-  const handleSelectAnswer = (selectedAnswer) => {
-    setUserAnswersAndQusetions((prevUserAnswers) => {
-      return [...prevUserAnswers, selectedAnswer];
-    });
-  };
+const Quiz = () => {
+  const [userAnswersAndQuestions, setUserAnswersAndQuestions] = useState([]);
+  const [answerState, setAnswerState] = useState("");
+  const activeQuestionIndex =
+    answerState === ""
+      ? userAnswersAndQuestions.length
+      : userAnswersAndQuestions.length - 1;
+  const quizIsComplete = activeQuestionIndex === QUESTIONS.length;
+
+  const handleSelectAnswer = useCallback(
+    (selectedAnswer) => {
+      setAnswerState("answered");
+      setUserAnswersAndQuestions((prevUserAnswers) => [
+        ...prevUserAnswers,
+        selectedAnswer,
+      ]);
+      setTimeout(() => {
+        if (selectedAnswer === QUESTIONS[activeQuestionIndex].answers[0]) {
+          setAnswerState("correct");
+        } else {
+          setAnswerState("wrong");
+        }
+        setTimeout(() => {
+          setAnswerState("");
+        }, 2000);
+      }, 1000);
+    },
+    [activeQuestionIndex]
+  );
+
+  const handleSkipAnswer = useCallback(() => {
+    handleSelectAnswer(null);
+  }, [handleSelectAnswer]);
 
   if (quizIsComplete) {
     return (
       <div id="summary">
-        <h2>Quiz completed</h2>
         <img src={QuizComplete} alt="Quiz trophy" />
+        <h2>Quiz completed</h2>
       </div>
     );
   }
 
-  const displayQuestion = QUESTIONS[activeQusetionIndex].text;
-  const shuffledAnswers = [...QUESTIONS[activeQusetionIndex].answers];
+  const shuffledAnswers = [...QUESTIONS[activeQuestionIndex].answers];
   shuffledAnswers.sort(() => Math.random() - 0.5);
-  const answers = shuffledAnswers.map((answer) => {
-    return (
-      <li key={answer} className="answer">
-        <button onClick={() => handleSelectAnswer(answer)}>{answer}</button>
-      </li>
-    );
-  });
 
   return (
     <div id="quiz">
       <div id="question">
-        <h2>{displayQuestion}</h2>
-        <ul id="answers">{answers}</ul>
+        <QuestionTimer
+          key={activeQuestionIndex}
+          timeout={10000}
+          onTimeout={handleSkipAnswer}
+        />
+        <h2>{QUESTIONS[activeQuestionIndex].text}</h2>
+        <ul id="answers">
+          {shuffledAnswers.map((answer) => {
+            const isSelected =
+              userAnswersAndQuestions[userAnswersAndQuestions.length - 1] ===
+              answer;
+            let cssClasses;
+            if (answerState === "answered" && isSelected) {
+              cssClasses = "selected";
+            }
+            if (
+              (answerState === "correct" || answerState === "wrong") &&
+              isSelected
+            ) {
+              cssClasses = answerState;
+            }
+            return (
+              <li key={answer} className="answer">
+                <button
+                  onClick={() => handleSelectAnswer(answer)}
+                  className={cssClasses}
+                >
+                  {answer}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );
