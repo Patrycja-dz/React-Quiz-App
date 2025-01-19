@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const QusetionTimer = ({ timeout, onTimeout }) => {
+const QusetionTimer = ({ timeout, onTimeout, mode }) => {
   const [timeLeft, setTimeLeft] = useState(timeout);
 
   useEffect(() => {
@@ -20,7 +20,14 @@ const QusetionTimer = ({ timeout, onTimeout }) => {
     };
   }, []);
 
-  return <progress id="question-time" max={timeout} value={timeLeft} />;
+  return (
+    <progress
+      id="question-time"
+      max={timeout}
+      value={timeLeft}
+      className={mode}
+    />
+  );
 };
 
 export default QusetionTimer;
